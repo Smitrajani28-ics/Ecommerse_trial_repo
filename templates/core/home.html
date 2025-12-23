@@ -1,0 +1,18 @@
+{% extends 'base.html' %}
+
+{% block title %}Home - Ecommerce Site{% endblock %}
+
+{% block content %}
+<div class="jumbotron bg-primary text-white p-5 rounded mb-4">
+    <h1 class="display-4">Welcome to Our Store!</h1>
+    <p class="lead">Discover amazing products at great prices.</p>
+    <a class="btn btn-light btn-lg" href="{% url 'products:product_list' %}" role="button">Shop Now</a>
+</div>
+
+<div class="row">
+    <div class="col-md-12">
+        <h2>Featured Products</h2>
+        <p>Coming soon - featured products will be displayed here.</p>
+    </div>
+</div>
+{% endblock %}

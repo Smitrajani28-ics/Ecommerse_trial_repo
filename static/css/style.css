@@ -1,0 +1,54 @@
+/* Custom styles for ecommerce site */
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.product-card {
+    transition: transform 0.2s;
+}
+
+.product-card:hover {
+    transform: translateY(-5px);
+}
+
+.cart-item {
+    border-bottom: 1px solid #eee;
+    padding: 15px 0;
+}
+
+.cart-item:last-child {
+    border-bottom: none;
+}
+
+.price {
+    font-weight: bold;
+    color: #28a745;
+}
+
+.btn-cart {
+    background-color: #007bff;
+    border-color: #007bff;
+}
+
+.btn-cart:hover {
+    background-color: #0056b3;
+    border-color: #0056b3;
+}
+
+.navbar-brand {
+    font-weight: bold;
+}
+
+footer {
+    margin-top: auto;
+}
+
+.product-image {
+    max-height: 300px;
+    object-fit: cover;
+}
+
+.quantity-input {
+    width: 80px;
+}
