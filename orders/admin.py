@@ -1,5 +1,6 @@
 from django.contrib import admin
 from .models import Order, OrderItem, OrderStatusHistory
+from .utils import send_order_status_update_email
 
 
 class OrderItemInline(admin.TabularInline):
@@ -66,16 +67,22 @@ class OrderAdmin(admin.ModelAdmin):
 
     def mark_as_processing(self, request, queryset):
         updated = queryset.update(status='processing')
+        for order in queryset:
+            send_order_status_update_email(order)
         self.message_user(request, f'{updated} orders marked as processing.')
     mark_as_processing.short_description = 'Mark selected orders as processing'
 
     def mark_as_shipped(self, request, queryset):
         updated = queryset.update(status='shipped')
+        for order in queryset:
+            send_order_status_update_email(order)
         self.message_user(request, f'{updated} orders marked as shipped.')
     mark_as_shipped.short_description = 'Mark selected orders as shipped'
 
     def mark_as_delivered(self, request, queryset):
         updated = queryset.update(status='delivered')
+        for order in queryset:
+            send_order_status_update_email(order)
         self.message_user(request, f'{updated} orders marked as delivered.')
     mark_as_delivered.short_description = 'Mark selected orders as delivered'
 

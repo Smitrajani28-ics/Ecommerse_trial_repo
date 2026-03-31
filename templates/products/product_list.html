@@ -1,12 +1,177 @@
 {% extends 'base.html' %}
 
-{% block title %}Products - Ecommerce Site{% endblock %}
+{% block title %}
+{% if current_category %}{{ current_category.name }} - {% endif %}Products
+{% endblock %}
 
 {% block content %}
 <div class="row">
-    <div class="col-md-12">
-        <h2>Products</h2>
-        <p>Product listing will be implemented in a later task.</p>
+    <!-- Sidebar: Categories & Filters -->
+    <div class="col-md-3">
+        <div class="card mb-3">
+            <div class="card-body">
+                <h5 class="card-title">Categories</h5>
+                <ul class="list-unstyled">
+                    <li class="mb-1">
+                        <a href="{% url 'products:product_list' %}"
+                           class="{% if not current_category %}fw-bold{% endif %}">
+                            All Products
+                        </a>
+                    </li>
+                    {% for cat in categories %}
+                    <li class="mb-1">
+                        <a href="{% url 'products:product_list_by_category' cat.slug %}"
+                           class="{% if current_category.slug == cat.slug %}fw-bold{% endif %}">
+                            {{ cat.name }}
+                        </a>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="col-md-9">
+        <!-- Search & Sort Bar -->
+        <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+            <form method="get" class="d-flex" style="max-width:400px;flex:1;">
+                <input type="text" name="q" class="form-control me-2"
+                       placeholder="Search products..." value="{{ search_query }}">
+                {% if current_sort %}
+                <input type="hidden" name="sort" value="{{ current_sort }}">
+                {% endif %}
+                <button type="submit" class="btn btn-outline-primary">
+                    <i class="fa fa-search"></i>
+                </button>
+            </form>
+            <div>
+                <label class="me-1">Sort:</label>
+                <select id="sort-select" class="form-select form-select-sm d-inline-block" style="width:auto;">
+                    <option value="" {% if not current_sort %}selected{% endif %}>Featured</option>
+                    <option value="price_asc" {% if current_sort == 'price_asc' %}selected{% endif %}>Price: Low to High</option>
+                    <option value="price_desc" {% if current_sort == 'price_desc' %}selected{% endif %}>Price: High to Low</option>
+                    <option value="name" {% if current_sort == 'name' %}selected{% endif %}>Name</option>
+                    <option value="newest" {% if current_sort == 'newest' %}selected{% endif %}>Newest</option>
+                </select>
+            </div>
+        </div>
+
+        {% if search_query %}
+        <p class="text-muted">Search results for "{{ search_query }}"</p>
+        {% endif %}
+
+        {% if current_category %}
+        <h2>{{ current_category.name }}</h2>
+        {% if current_category.description %}
+        <p class="text-muted">{{ current_category.description }}</p>
+        {% endif %}
+        {% endif %}
+
+        <!-- Product Grid -->
+        <div class="row">
+            {% for product in products %}
+            <div class="col-md-4 col-sm-6 mb-4">
+                <div class="card h-100">
+                    {% if product.image %}
+                    <a href="{{ product.get_absolute_url }}">
+                        <img src="{{ product.image.url }}" class="card-img-top product-image"
+                             alt="{{ product.name }}" loading="lazy">
+                    </a>
+                    {% else %}
+                    <a href="{{ product.get_absolute_url }}">
+                        <div class="card-img-top product-image d-flex align-items-center justify-content-center bg-light" style="height:200px;">
+                            <i class="fa fa-image fa-3x text-muted"></i>
+                        </div>
+                    </a>
+                    {% endif %}
+                    <div class="card-body d-flex flex-column">
+                        <h6 class="card-title">
+                            <a href="{{ product.get_absolute_url }}" class="text-decoration-none">
+                                {{ product.name }}
+                            </a>
+                        </h6>
+                        <p class="card-text text-muted small flex-grow-1">
+                            {{ product.short_description|default:product.description|truncatewords:15 }}
+                        </p>
+                        <div class="mt-auto">
+                            <div class="d-flex align-items-center mb-2">
+                                <span class="price">${{ product.price }}</span>
+                                {% if product.is_on_sale %}
+                                <span class="text-muted text-decoration-line-through ms-2">
+                                    ${{ product.compare_price }}
+                                </span>
+                                <span class="badge bg-danger ms-2">-{{ product.discount_percentage }}%</span>
+                                {% endif %}
+                            </div>
+                            {% if product.is_in_stock %}
+                            <span class="badge bg-success mb-2">In Stock</span>
+                            <form method="post" action="{% url 'cart:cart_add' product.id %}" class="mt-1">
+                                {% csrf_token %}
+                                <input type="hidden" name="quantity" value="1">
+                                <button type="submit" class="btn btn-sm btn-primary w-100">
+                                    <i class="fa fa-cart-plus"></i> Add to Cart
+                                </button>
+                            </form>
+                            {% else %}
+                            <span class="badge bg-secondary mb-2">Out of Stock</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% empty %}
+            <div class="col-12">
+                <div class="alert alert-info">
+                    No products found{% if search_query %} for "{{ search_query }}"{% endif %}.
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- Pagination -->
+        {% if is_paginated %}
+        <nav aria-label="Product pagination">
+            <ul class="pagination justify-content-center">
+                {% if page_obj.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if search_query %}&q={{ search_query }}{% endif %}{% if current_sort %}&sort={{ current_sort }}{% endif %}">
+                        Previous
+                    </a>
+                </li>
+                {% endif %}
+                {% for num in page_obj.paginator.page_range %}
+                <li class="page-item {% if page_obj.number == num %}active{% endif %}">
+                    <a class="page-link" href="?page={{ num }}{% if search_query %}&q={{ search_query }}{% endif %}{% if current_sort %}&sort={{ current_sort }}{% endif %}">
+                        {{ num }}
+                    </a>
+                </li>
+                {% endfor %}
+                {% if page_obj.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if search_query %}&q={{ search_query }}{% endif %}{% if current_sort %}&sort={{ current_sort }}{% endif %}">
+                        Next
+                    </a>
+                </li>
+                {% endif %}
+            </ul>
+        </nav>
+        {% endif %}
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.getElementById('sort-select').addEventListener('change', function() {
+    const url = new URL(window.location.href);
+    if (this.value) {
+        url.searchParams.set('sort', this.value);
+    } else {
+        url.searchParams.delete('sort');
+    }
+    url.searchParams.delete('page');
+    window.location.href = url.toString();
+});
+</script>
 {% endblock %}

@@ -1,0 +1,78 @@
+{% extends 'base.html' %}
+
+{% block title %}Payment - Order #{{ order.order_number }}{% endblock %}
+
+{% block content %}
+<h2><i class="fa fa-lock"></i> Payment</h2>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header"><h5>Pay for Order #{{ order.order_number }}</h5></div>
+            <div class="card-body">
+                {% if stripe_publishable_key and client_secret %}
+                <div id="card-element" class="mb-3 p-3 border rounded"></div>
+                <div id="card-errors" class="text-danger mb-3" role="alert"></div>
+                <button id="pay-btn" class="btn btn-primary btn-lg w-100">
+                    <i class="fa fa-credit-card"></i> Pay ${{ order.total_amount }}
+                </button>
+                {% else %}
+                <!-- Demo mode without Stripe -->
+                <div class="alert alert-info">
+                    <i class="fa fa-info-circle"></i> Payment processing is in demo mode.
+                </div>
+                <a href="{% url 'payments:success' order.id %}" class="btn btn-primary btn-lg w-100">
+                    <i class="fa fa-check"></i> Complete Payment (Demo) - ${{ order.total_amount }}
+                </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header"><h5>Order Summary</h5></div>
+            <div class="card-body">
+                <p>Order: #{{ order.order_number }}</p>
+                <p>Items: {{ order.total_items }}</p>
+                <hr>
+                <p>Subtotal: ${{ order.subtotal }}</p>
+                <p>Tax: ${{ order.tax_amount }}</p>
+                <p class="fw-bold fs-5">Total: ${{ order.total_amount }}</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+{% if stripe_publishable_key and client_secret %}
+<script src="https://js.stripe.com/v3/"></script>
+<script>
+const stripe = Stripe('{{ stripe_publishable_key }}');
+const elements = stripe.elements();
+const card = elements.create('card');
+card.mount('#card-element');
+
+card.on('change', function(event) {
+    const el = document.getElementById('card-errors');
+    el.textContent = event.error ? event.error.message : '';
+});
+
+document.getElementById('pay-btn').addEventListener('click', async function() {
+    this.disabled = true;
+    this.innerHTML = '<i class="fa fa-spinner fa-spin"></i> Processing...';
+    const {error} = await stripe.confirmCardPayment('{{ client_secret }}', {
+        payment_method: {card: card}
+    });
+    if (error) {
+        document.getElementById('card-errors').textContent = error.message;
+        this.disabled = false;
+        this.innerHTML = '<i class="fa fa-credit-card"></i> Pay ${{ order.total_amount }}';
+    } else {
+        window.location.href = '{% url "payments:success" order.id %}';
+    }
+});
+</script>
+{% endif %}
+{% endblock %}

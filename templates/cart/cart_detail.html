@@ -1,12 +1,89 @@
 {% extends 'base.html' %}
 
-{% block title %}Shopping Cart - Ecommerce Site{% endblock %}
+{% block title %}Shopping Cart{% endblock %}
 
 {% block content %}
-<div class="row">
-    <div class="col-md-12">
-        <h2>Shopping Cart</h2>
-        <p>Cart functionality will be implemented in a later task.</p>
-    </div>
+<h2><i class="fa fa-shopping-cart"></i> Shopping Cart</h2>
+
+{% if cart_items %}
+<div class="table-responsive">
+    <table class="table align-middle">
+        <thead>
+            <tr>
+                <th>Product</th>
+                <th>Price</th>
+                <th>Quantity</th>
+                <th>Total</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in cart_items %}
+            <tr>
+                <td>
+                    <div class="d-flex align-items-center">
+                        {% if item.product.image %}
+                        <img src="{{ item.product.image.url }}" alt="{{ item.product.name }}"
+                             style="width:60px;height:60px;object-fit:cover;" class="rounded me-3">
+                        {% endif %}
+                        <a href="{{ item.product.get_absolute_url }}" class="text-decoration-none">
+                            {{ item.product.name }}
+                        </a>
+                    </div>
+                </td>
+                <td>${{ item.product.price }}</td>
+                <td>
+                    <form method="post" action="{% url 'cart:cart_update' item.product.id %}" class="d-inline">
+                        {% csrf_token %}
+                        <div class="input-group" style="width:130px;">
+                            <input type="number" name="quantity" value="{{ item.quantity }}"
+                                   min="1" max="{{ item.product.stock_quantity }}"
+                                   class="form-control form-control-sm quantity-input">
+                            <button type="submit" class="btn btn-sm btn-outline-primary">
+                                <i class="fa fa-sync-alt"></i>
+                            </button>
+                        </div>
+                    </form>
+                </td>
+                <td class="price">${{ item.get_total_price }}</td>
+                <td>
+                    <form method="post" action="{% url 'cart:cart_remove' item.product.id %}">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-sm btn-outline-danger">
+                            <i class="fa fa-trash"></i>
+                        </button>
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+        <tfoot>
+            <tr>
+                <td colspan="3" class="text-end"><strong>Total:</strong></td>
+                <td class="price fs-5"><strong>${{ cart.total_price }}</strong></td>
+                <td></td>
+            </tr>
+        </tfoot>
+    </table>
 </div>
+
+<div class="d-flex justify-content-between mt-3">
+    <a href="{% url 'products:product_list' %}" class="btn btn-outline-secondary">
+        <i class="fa fa-arrow-left"></i> Continue Shopping
+    </a>
+    <a href="{% url 'orders:order_create' %}" class="btn btn-primary btn-lg">
+        <i class="fa fa-credit-card"></i> Proceed to Checkout
+    </a>
+</div>
+
+{% else %}
+<div class="text-center py-5">
+    <i class="fa fa-shopping-cart fa-4x text-muted mb-3"></i>
+    <h4>Your cart is empty</h4>
+    <p class="text-muted">Browse our products and add items to your cart.</p>
+    <a href="{% url 'products:product_list' %}" class="btn btn-primary">
+        <i class="fa fa-gift"></i> Start Shopping
+    </a>
+</div>
+{% endif %}
 {% endblock %}

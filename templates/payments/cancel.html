@@ -1,0 +1,19 @@
+{% extends 'base.html' %}
+
+{% block title %}Payment Cancelled{% endblock %}
+
+{% block content %}
+<div class="text-center py-5">
+    <i class="fa fa-times-circle fa-5x text-warning mb-3"></i>
+    <h2>Payment Cancelled</h2>
+    <p class="lead">Your payment for order #{{ order.order_number }} was not completed.</p>
+    <div class="mt-4">
+        <a href="{% url 'payments:process' order.id %}" class="btn btn-primary me-2">
+            Try Again
+        </a>
+        <a href="{% url 'orders:order_detail' order.id %}" class="btn btn-outline-secondary">
+            View Order
+        </a>
+    </div>
+</div>
+{% endblock %}
