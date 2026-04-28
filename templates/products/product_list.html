@@ -116,6 +116,14 @@
                             {% else %}
                             <span class="badge bg-secondary mb-2">Out of Stock</span>
                             {% endif %}
+                            {% if user.is_authenticated %}
+                            <form method="post" action="{% url 'wishlist:toggle' product.id %}" class="mt-1">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-sm {% if product.id in wishlist_product_ids %}btn-danger{% else %}btn-outline-danger{% endif %} w-100">
+                                    <i class="fa fa-heart"></i> {% if product.id in wishlist_product_ids %}Wishlisted{% else %}Wishlist{% endif %}
+                                </button>
+                            </form>
+                            {% endif %}
                         </div>
                     </div>
                 </div>

@@ -71,6 +71,15 @@
         </form>
         {% endif %}
 
+        {% if user.is_authenticated %}
+        <form method="post" action="{% url 'wishlist:toggle' product.id %}" class="mb-3">
+            {% csrf_token %}
+            <button type="submit" class="btn {% if product.id in wishlist_product_ids %}btn-danger{% else %}btn-outline-danger{% endif %}">
+                <i class="fa fa-heart"></i> {% if product.id in wishlist_product_ids %}Wishlisted{% else %}Add to Wishlist{% endif %}
+            </button>
+        </form>
+        {% endif %}
+
         <hr>
         <h5>Description</h5>
         <div>{{ product.description|linebreaks }}</div>
