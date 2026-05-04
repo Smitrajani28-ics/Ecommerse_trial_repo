@@ -1,6 +1,6 @@
 from django.shortcuts import render, get_object_or_404
 from django.views.generic import ListView, DetailView
-from django.db.models import Q
+from django.db.models import Q, Avg
 from .models import Product, Category
 
 
@@ -12,8 +12,7 @@ class ProductListView(ListView):
 
     def get_queryset(self):
         queryset = Product.objects.filter(is_active=True).select_related('category')
-        
-        # Filter by category
+
         category_slug = self.kwargs.get('category_slug')
         if category_slug:
             self.category = get_object_or_404(Category, slug=category_slug, is_active=True)
@@ -21,7 +20,6 @@ class ProductListView(ListView):
         else:
             self.category = None
 
-        # Search
         query = self.request.GET.get('q', '').strip()
         if query:
             queryset = queryset.filter(
@@ -30,7 +28,6 @@ class ProductListView(ListView):
                 Q(category__name__icontains=query)
             )
 
-        # Sorting
         sort = self.request.GET.get('sort', '')
         if sort == 'price_asc':
             queryset = queryset.order_by('price')
@@ -65,7 +62,11 @@ class ProductDetailView(DetailView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['related_products'] = Product.objects.filter(
-            category=self.object.category,
-            is_active=True
+            category=self.object.category, is_active=True
         ).exclude(pk=self.object.pk)[:4]
+        context['avg_rating'] = self.object.reviews.aggregate(avg=Avg('rating'))['avg'] or 0
+        if self.request.user.is_authenticated:
+            context['user_has_reviewed'] = self.object.reviews.filter(user=self.request.user).exists()
+        else:
+            context['user_has_reviewed'] = False
         return context

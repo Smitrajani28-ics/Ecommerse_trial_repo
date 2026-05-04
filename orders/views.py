@@ -4,10 +4,12 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.views import View
 from django.views.generic import ListView, DetailView
+from django.views.decorators.http import require_POST
 from decimal import Decimal
 from cart.views import get_or_create_cart
-from .models import Order, OrderItem, OrderStatusHistory
-from .forms import CheckoutForm
+from coupons.models import Coupon
+from .models import Order, OrderItem, OrderStatusHistory, ReturnRequest
+from .forms import CheckoutForm, ReturnRequestForm
 
 
 class OrderCreateView(LoginRequiredMixin, View):
@@ -24,7 +26,6 @@ class OrderCreateView(LoginRequiredMixin, View):
             'shipping_last_name': request.user.last_name,
             'shipping_email': request.user.email,
         })
-        # Pre-fill from default shipping address if available
         default_addr = request.user.addresses.filter(type='shipping', is_default=True).first()
         if default_addr:
             form = CheckoutForm(initial={
@@ -41,8 +42,11 @@ class OrderCreateView(LoginRequiredMixin, View):
             })
 
         cart_items = cart.items.select_related('product').all()
+        coupon, discount = self._get_coupon_discount(request, cart.total_price)
+
         return render(request, 'orders/checkout.html', {
-            'form': form, 'cart': cart, 'cart_items': cart_items
+            'form': form, 'cart': cart, 'cart_items': cart_items,
+            'coupon': coupon, 'discount': discount,
         })
 
     def post(self, request):
@@ -70,14 +74,17 @@ class OrderCreateView(LoginRequiredMixin, View):
             billing_address = shipping_address if cd.get('billing_same_as_shipping') else shipping_address
 
             subtotal = cart.total_price
-            tax = subtotal * Decimal('0.08')  # 8% tax
-            total = subtotal + tax
+            tax = subtotal * Decimal('0.08')
+            coupon, discount = self._get_coupon_discount(request, subtotal)
+            total = subtotal + tax - discount
 
             order = Order.objects.create(
                 user=request.user,
                 subtotal=subtotal,
                 tax_amount=tax,
+                discount_amount=discount,
                 total_amount=total,
+                coupon_code=coupon.code if coupon else '',
                 shipping_address=shipping_address,
                 billing_address=billing_address,
                 email=cd['shipping_email'],
@@ -101,12 +108,31 @@ class OrderCreateView(LoginRequiredMixin, View):
                 order=order, status='pending', notes='Order placed', created_by=request.user
             )
 
+            # Increment coupon usage
+            if coupon:
+                coupon.times_used += 1
+                coupon.save(update_fields=['times_used'])
+                request.session.pop('coupon_id', None)
+
             cart.clear()
             return redirect('payments:process', order_id=order.id)
 
+        coupon, discount = self._get_coupon_discount(request, cart.total_price)
         return render(request, 'orders/checkout.html', {
-            'form': form, 'cart': cart, 'cart_items': cart_items
+            'form': form, 'cart': cart, 'cart_items': cart_items,
+            'coupon': coupon, 'discount': discount,
         })
+
+    def _get_coupon_discount(self, request, subtotal):
+        coupon_id = request.session.get('coupon_id')
+        if coupon_id:
+            try:
+                coupon = Coupon.objects.get(id=coupon_id)
+                if coupon.is_valid:
+                    return coupon, coupon.calculate_discount(subtotal)
+            except Coupon.DoesNotExist:
+                request.session.pop('coupon_id', None)
+        return None, Decimal('0.00')
 
 
 class OrderHistoryView(LoginRequiredMixin, ListView):
@@ -133,4 +159,30 @@ class OrderDetailView(LoginRequiredMixin, DetailView):
         context = super().get_context_data(**kwargs)
         context['order_items'] = self.object.items.select_related('product').all()
         context['status_history'] = self.object.status_history.all()
+        context['return_form'] = ReturnRequestForm(order=self.object)
+        context['return_requests'] = self.object.return_requests.all()
+        if hasattr(self.object, 'shipment'):
+            context['shipment'] = self.object.shipment
         return context
+
+
+@login_required
+@require_POST
+def request_return(request, order_id):
+    order = get_object_or_404(Order, id=order_id, user=request.user)
+
+    if order.status not in ('delivered',):
+        messages.error(request, 'Returns can only be requested for delivered orders.')
+        return redirect('orders:order_detail', order_id=order.id)
+
+    form = ReturnRequestForm(request.POST, order=order)
+    if form.is_valid():
+        return_req = form.save(commit=False)
+        return_req.order = order
+        return_req.user = request.user
+        return_req.save()
+        messages.success(request, 'Return request submitted.')
+    else:
+        messages.error(request, 'Please correct the errors.')
+
+    return redirect('orders:order_detail', order_id=order.id)

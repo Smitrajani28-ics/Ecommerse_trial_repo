@@ -90,9 +90,15 @@ class Product(models.Model):
             return int(((self.compare_price - self.price) / self.compare_price) * 100)
         return 0
 
+    LOW_STOCK_THRESHOLD = 5
+
     @property
     def is_in_stock(self):
         return self.stock_quantity > 0
+
+    @property
+    def is_low_stock(self):
+        return 0 < self.stock_quantity <= self.LOW_STOCK_THRESHOLD
 
     def get_display_price(self):
         return self.price

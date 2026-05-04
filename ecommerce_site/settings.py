@@ -48,6 +48,10 @@ INSTALLED_APPS = [
     'payments',
     'core',
     'wishlist',
+    'reviews',
+    'coupons',
+    'analytics',
+    'django.contrib.sitemaps',
 ]
 
 MIDDLEWARE = [

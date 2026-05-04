@@ -76,6 +76,28 @@
     </a>
 </div>
 
+<!-- Coupon Section -->
+<div class="card mt-4">
+    <div class="card-body">
+        <h5 class="card-title"><i class="fa fa-tag"></i> Have a Coupon?</h5>
+        {% if coupon %}
+        <div class="alert alert-success d-flex justify-content-between align-items-center mb-0">
+            <span>Coupon <strong>{{ coupon.code }}</strong> applied! Discount: ${{ discount|floatformat:2 }}</span>
+            <form method="post" action="{% url 'coupons:remove' %}" class="d-inline">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-sm btn-outline-danger">Remove</button>
+            </form>
+        </div>
+        {% else %}
+        <form method="post" action="{% url 'coupons:apply' %}" class="d-flex gap-2">
+            {% csrf_token %}
+            <input type="text" name="coupon_code" class="form-control" placeholder="Enter coupon code" style="max-width:300px;">
+            <button type="submit" class="btn btn-outline-primary">Apply</button>
+        </form>
+        {% endif %}
+    </div>
+</div>
+
 {% else %}
 <div class="text-center py-5">
     <i class="fa fa-shopping-cart fa-4x text-muted mb-3"></i>

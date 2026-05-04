@@ -46,6 +46,9 @@
                         <ul class="dropdown-menu">
                             <li><a class="dropdown-item" href="{% url 'accounts:profile' %}">Profile</a></li>
                             <li><a class="dropdown-item" href="{% url 'orders:order_history' %}">Order History</a></li>
+                            {% if user.is_staff %}
+                            <li><a class="dropdown-item" href="{% url 'analytics:dashboard' %}"><i class="fa fa-chart-line"></i> Analytics</a></li>
+                            {% endif %}
                             <li><hr class="dropdown-divider"></li>
                             <li><a class="dropdown-item" href="{% url 'accounts:logout' %}">Logout</a></li>
                         </ul>

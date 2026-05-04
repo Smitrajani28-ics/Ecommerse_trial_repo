@@ -31,11 +31,25 @@
     <!-- Product Info -->
     <div class="col-md-6">
         <h1>{{ product.name }}</h1>
-        <p class="text-muted">Category: 
+        <p class="text-muted">Category:
             <a href="{% url 'products:product_list_by_category' product.category.slug %}">
                 {{ product.category.name }}
             </a>
         </p>
+
+        <!-- Average Rating -->
+        {% if product.reviews.count > 0 %}
+        <p>
+            {% with avg=product.reviews.all|dictsort:"rating" %}
+            <span class="text-warning">
+                {% for i in "12345" %}
+                    {% if forloop.counter <= avg_rating %}<i class="fa fa-star"></i>{% else %}<i class="fa fa-star-o"></i>{% endif %}
+                {% endfor %}
+            </span>
+            {% endwith %}
+            <small class="text-muted">({{ product.reviews.count }} review{{ product.reviews.count|pluralize }})</small>
+        </p>
+        {% endif %}
 
         <div class="mb-3">
             <span class="price fs-3">${{ product.price }}</span>
@@ -49,6 +63,9 @@
 
         {% if product.is_in_stock %}
         <p class="text-success"><i class="fa fa-check-circle"></i> In Stock ({{ product.stock_quantity }} available)</p>
+            {% if product.is_low_stock %}
+            <p class="text-warning"><i class="fa fa-exclamation-triangle"></i> Low stock — order soon!</p>
+            {% endif %}
         {% else %}
         <p class="text-danger"><i class="fa fa-times-circle"></i> Out of Stock</p>
         {% endif %}
@@ -89,6 +106,72 @@
         {% endif %}
     </div>
 </div>
+
+<!-- Reviews Section -->
+<hr class="my-5">
+<h3><i class="fa fa-star"></i> Customer Reviews</h3>
+
+{% if user.is_authenticated and not user_has_reviewed %}
+<div class="card mb-4">
+    <div class="card-body">
+        <h5>Write a Review</h5>
+        <form method="post" action="{% url 'reviews:add_review' product.id %}">
+            {% csrf_token %}
+            <div class="mb-3">
+                <label for="id_rating" class="form-label">Rating</label>
+                <select name="rating" id="id_rating" class="form-select" style="width:auto;" required>
+                    <option value="">Select...</option>
+                    {% for i in "12345" %}
+                    <option value="{{ forloop.counter }}">{{ forloop.counter }} ★</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="mb-3">
+                <label for="id_title" class="form-label">Title</label>
+                <input type="text" name="title" id="id_title" class="form-control" required maxlength="200">
+            </div>
+            <div class="mb-3">
+                <label for="id_body" class="form-label">Review</label>
+                <textarea name="body" id="id_body" class="form-control" rows="4" required></textarea>
+            </div>
+            <button type="submit" class="btn btn-primary"><i class="fa fa-paper-plane"></i> Submit Review</button>
+        </form>
+    </div>
+</div>
+{% endif %}
+
+{% for review in product.reviews.all %}
+<div class="card mb-3">
+    <div class="card-body">
+        <div class="d-flex justify-content-between">
+            <div>
+                <strong>{{ review.user.get_full_name|default:review.user.username }}</strong>
+                {% if review.is_verified_purchase %}
+                <span class="badge bg-success ms-2">Verified Purchase</span>
+                {% endif %}
+            </div>
+            <small class="text-muted">{{ review.created_at|date:"M d, Y" }}</small>
+        </div>
+        <div class="text-warning my-1">
+            {% for i in "12345" %}
+                {% if forloop.counter <= review.rating %}<i class="fa fa-star"></i>{% else %}<i class="far fa-star"></i>{% endif %}
+            {% endfor %}
+        </div>
+        <h6>{{ review.title }}</h6>
+        <p>{{ review.body }}</p>
+        {% if review.user == user %}
+        <form method="post" action="{% url 'reviews:delete_review' review.id %}" class="d-inline">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('Delete this review?')">
+                <i class="fa fa-trash"></i> Delete
+            </button>
+        </form>
+        {% endif %}
+    </div>
+</div>
+{% empty %}
+<p class="text-muted">No reviews yet. Be the first to review this product!</p>
+{% endfor %}
 
 <!-- Related Products -->
 {% if related_products %}
