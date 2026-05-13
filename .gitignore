@@ -13,6 +13,7 @@ db.sqlite3-journal
 venv/
 ENV/
 env/
+demo_env/
 
 # Static files
 /staticfiles/

@@ -1,0 +1,112 @@
+{% extends 'base.html' %}
+
+{% block title %}Checkout{% endblock %}
+
+{% block content %}
+<h2><i class="fa fa-credit-card"></i> Checkout</h2>
+
+<div class="row">
+    <div class="col-md-8">
+        <form method="post">
+            {% csrf_token %}
+            <div class="card mb-3">
+                <div class="card-header"><h5>Shipping Information</h5></div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">First Name</label>
+                            {{ form.shipping_first_name }}
+                            {% if form.shipping_first_name.errors %}<div class="text-danger small">{{ form.shipping_first_name.errors.0 }}</div>{% endif %}
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Last Name</label>
+                            {{ form.shipping_last_name }}
+                            {% if form.shipping_last_name.errors %}<div class="text-danger small">{{ form.shipping_last_name.errors.0 }}</div>{% endif %}
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Email</label>
+                            {{ form.shipping_email }}
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Phone</label>
+                            {{ form.shipping_phone }}
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Address Line 1</label>
+                        {{ form.shipping_address_1 }}
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Address Line 2</label>
+                        {{ form.shipping_address_2 }}
+                    </div>
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">City</label>
+                            {{ form.shipping_city }}
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">State</label>
+                            {{ form.shipping_state }}
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Postal Code</label>
+                            {{ form.shipping_postal_code }}
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Country</label>
+                        {{ form.shipping_country }}
+                    </div>
+                    <div class="form-check mb-3">
+                        {{ form.billing_same_as_shipping }}
+                        <label class="form-check-label">Billing address same as shipping</label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card mb-3">
+                <div class="card-header"><h5>Order Notes</h5></div>
+                <div class="card-body">
+                    {{ form.notes }}
+                </div>
+            </div>
+
+            <button type="submit" class="btn btn-primary btn-lg w-100">
+                <i class="fa fa-lock"></i> Place Order
+            </button>
+        </form>
+    </div>
+
+    <!-- Order Summary Sidebar -->
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header"><h5>Order Summary</h5></div>
+            <div class="card-body">
+                {% for item in cart_items %}
+                <div class="d-flex justify-content-between mb-2">
+                    <span>{{ item.product.name }} x{{ item.quantity }}</span>
+                    <span>${{ item.get_total_price }}</span>
+                </div>
+                {% endfor %}
+                <hr>
+                <div class="d-flex justify-content-between">
+                    <span>Subtotal</span>
+                    <span>${{ cart.total_price }}</span>
+                </div>
+                <div class="d-flex justify-content-between text-muted">
+                    <span>Tax (8%)</span>
+                    <span>${{ cart.total_price|floatformat:2 }}</span>
+                </div>
+                <hr>
+                <div class="d-flex justify-content-between fw-bold fs-5">
+                    <span>Total</span>
+                    <span class="price">${{ cart.total_price }}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,38 @@
+# .kiro/agents/multi-agent-config.yml
+workflow: "full-stack-development"
+orchestrator: "kiro-coordinator"
+
+agents:
+  architect:
+    model: "claude-4.0"                    # Premium model for complex design
+    specialization: "system-architecture"
+    context_window: 200000
+    temperature: 0.3                       # More deterministic for design
+    tools: ["mermaid", "plantuml", "architecture-validator"]
+    
+  coder:
+    model: "claude-sonnet-3.7"            # Fast and efficient for coding
+    specialization: "code-implementation"
+    context_window: 100000
+    temperature: 0.1                       # Very deterministic for code
+    tools: ["compiler", "linter", "formatter", "dependency-manager"]
+    
+  tester:
+    model: "claude-haiku"                  # Fast for test generation
+    specialization: "quality-assurance"
+    context_window: 75000
+    temperature: 0.2
+    tools: ["test-runner", "coverage-analyzer", "security-scanner"]
+    
+  reviewer:
+    model: "claude-sonnet-3.7"            # Good balance for reviews
+    specialization: "code-review"
+    context_window: 100000
+    temperature: 0.2
+    tools: ["static-analyzer", "security-checker", "performance-profiler"]
+
+coordination:
+  communication_protocol: "structured-handoff"
+  parallel_execution: true
+  rollback_strategy: "checkpoint"
+  progress_tracking: true

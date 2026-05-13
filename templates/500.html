@@ -1,0 +1,14 @@
+{% extends 'base.html' %}
+
+{% block title %}Server Error{% endblock %}
+
+{% block content %}
+<div class="text-center py-5">
+    <i class="fa fa-exclamation-triangle fa-5x text-danger mb-3"></i>
+    <h1>500 - Server Error</h1>
+    <p class="lead text-muted">Something went wrong. Please try again later.</p>
+    <a href="{% url 'core:home' %}" class="btn btn-primary mt-3">
+        <i class="fa fa-home"></i> Go Home
+    </a>
+</div>
+{% endblock %}

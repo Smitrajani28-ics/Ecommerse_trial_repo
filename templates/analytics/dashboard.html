@@ -1,0 +1,157 @@
+{% extends 'base.html' %}
+
+{% block title %}Analytics Dashboard{% endblock %}
+
+{% block content %}
+<h2><i class="fa fa-chart-line"></i> Analytics Dashboard</h2>
+
+<!-- Summary Cards -->
+<div class="row mb-4">
+    <div class="col-md-3 mb-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <h6 class="card-title text-muted">Total Revenue</h6>
+                <h3 class="text-success">${{ stats.total_revenue|floatformat:2 }}</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <h6 class="card-title text-muted">Monthly Revenue</h6>
+                <h3 class="text-primary">${{ stats.monthly_revenue|floatformat:2 }}</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <h6 class="card-title text-muted">Total Orders</h6>
+                <h3>{{ stats.total_orders }}</h3>
+                <small class="text-muted">{{ stats.monthly_orders }} this month</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <h6 class="card-title text-muted">Customers</h6>
+                <h3>{{ stats.total_customers }}</h3>
+                <small class="text-muted">{{ stats.new_customers }} new this month</small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-4 mb-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <h6 class="card-title text-muted">Avg Order Value</h6>
+                <h3>${{ stats.avg_order_value|floatformat:2 }}</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-8 mb-3">
+        <div class="card">
+            <div class="card-body">
+                <h6 class="card-title">Order Status Breakdown</h6>
+                {% for item in status_breakdown %}
+                <span class="badge bg-{% if item.status == 'delivered' %}success{% elif item.status == 'cancelled' %}danger{% elif item.status == 'shipped' %}info{% else %}warning{% endif %} me-2">
+                    {{ item.status|title }}: {{ item.count }}
+                </span>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Top Products -->
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">Top Products by Revenue</h5>
+                <table class="table table-sm">
+                    <thead><tr><th>Product</th><th>Sold</th><th>Revenue</th></tr></thead>
+                    <tbody>
+                    {% for p in top_products %}
+                    <tr>
+                        <td>{{ p.product__name }}</td>
+                        <td>{{ p.total_sold }}</td>
+                        <td>${{ p.total_revenue|floatformat:2 }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="3" class="text-muted">No sales data yet.</td></tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Low Stock Alert -->
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title"><i class="fa fa-exclamation-triangle text-warning"></i> Low Stock Alert</h5>
+                <table class="table table-sm">
+                    <thead><tr><th>Product</th><th>Stock</th></tr></thead>
+                    <tbody>
+                    {% for p in low_stock %}
+                    <tr>
+                        <td><a href="{{ p.get_absolute_url }}">{{ p.name }}</a></td>
+                        <td><span class="badge bg-{% if p.stock_quantity == 0 %}danger{% else %}warning{% endif %}">{{ p.stock_quantity }}</span></td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="2" class="text-muted">All products well stocked.</td></tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Orders -->
+<div class="card mb-4">
+    <div class="card-body">
+        <h5 class="card-title">Recent Orders</h5>
+        <table class="table table-sm">
+            <thead><tr><th>Order #</th><th>Customer</th><th>Status</th><th>Total</th><th>Date</th></tr></thead>
+            <tbody>
+            {% for order in latest_orders %}
+            <tr>
+                <td>{{ order.order_number }}</td>
+                <td>{{ order.user.username }}</td>
+                <td><span class="badge bg-{% if order.status == 'delivered' %}success{% elif order.status == 'cancelled' %}danger{% elif order.status == 'shipped' %}info{% else %}warning{% endif %}">{{ order.get_status_display }}</span></td>
+                <td>${{ order.total_amount|floatformat:2 }}</td>
+                <td>{{ order.created_at|date:"M d, Y" }}</td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Daily Sales Chart -->
+<div class="card mb-4">
+    <div class="card-body">
+        <h5 class="card-title">Daily Sales (Last 30 Days)</h5>
+        <table class="table table-sm">
+            <thead><tr><th>Date</th><th>Orders</th><th>Revenue</th></tr></thead>
+            <tbody>
+            {% for day in daily_sales %}
+            <tr>
+                <td>{{ day.date|date:"M d" }}</td>
+                <td>{{ day.count }}</td>
+                <td>${{ day.total|floatformat:2 }}</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="3" class="text-muted">No sales in the last 30 days.</td></tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

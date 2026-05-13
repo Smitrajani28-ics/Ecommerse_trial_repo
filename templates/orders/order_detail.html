@@ -1,0 +1,167 @@
+{% extends 'base.html' %}
+
+{% block title %}Order #{{ order.order_number }}{% endblock %}
+
+{% block content %}
+<h2>Order #{{ order.order_number }}</h2>
+
+<div class="row">
+    <div class="col-md-8">
+        <!-- Order Items -->
+        <div class="card mb-4">
+            <div class="card-body">
+                <h5 class="card-title">Order Items</h5>
+                <table class="table">
+                    <thead><tr><th>Product</th><th>Qty</th><th>Price</th><th>Total</th></tr></thead>
+                    <tbody>
+                    {% for item in order_items %}
+                    <tr>
+                        <td>{{ item.product_name }}</td>
+                        <td>{{ item.quantity }}</td>
+                        <td>${{ item.unit_price }}</td>
+                        <td>${{ item.total_price }}</td>
+                    </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Shipment Tracking -->
+        {% if shipment %}
+        <div class="card mb-4">
+            <div class="card-body">
+                <h5 class="card-title"><i class="fa fa-truck"></i> Shipment Tracking</h5>
+                <p><strong>Carrier:</strong> {{ shipment.get_carrier_display }}</p>
+                <p><strong>Tracking Number:</strong> {{ shipment.tracking_number }}</p>
+                {% if shipment.tracking_url %}
+                <p><a href="{{ shipment.tracking_url }}" target="_blank" class="btn btn-sm btn-outline-primary">
+                    <i class="fa fa-external-link-alt"></i> Track Package
+                </a></p>
+                {% endif %}
+                {% if shipment.estimated_delivery %}
+                <p><strong>Estimated Delivery:</strong> {{ shipment.estimated_delivery|date:"M d, Y" }}</p>
+                {% endif %}
+                {% if shipment.delivered_at %}
+                <p class="text-success"><strong>Delivered:</strong> {{ shipment.delivered_at|date:"M d, Y H:i" }}</p>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Return Requests -->
+        {% if return_requests %}
+        <div class="card mb-4">
+            <div class="card-body">
+                <h5 class="card-title"><i class="fa fa-undo"></i> Return Requests</h5>
+                {% for ret in return_requests %}
+                <div class="border rounded p-3 mb-2">
+                    <div class="d-flex justify-content-between">
+                        <strong>{{ ret.order_item.product_name }}</strong>
+                        <span class="badge bg-{% if ret.status == 'refunded' %}success{% elif ret.status == 'rejected' %}danger{% elif ret.status == 'approved' %}info{% else %}warning{% endif %}">
+                            {{ ret.get_status_display }}
+                        </span>
+                    </div>
+                    <small class="text-muted">Reason: {{ ret.get_reason_display }} | {{ ret.created_at|date:"M d, Y" }}</small>
+                    {% if ret.refund_amount %}<br><small>Refund: ${{ ret.refund_amount }}</small>{% endif %}
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Request Return Form -->
+        {% if order.status == 'delivered' %}
+        <div class="card mb-4">
+            <div class="card-body">
+                <h5 class="card-title">Request a Return</h5>
+                <form method="post" action="{% url 'orders:request_return' order.id %}">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label class="form-label">Item</label>
+                        {{ return_form.order_item }}
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Reason</label>
+                        {{ return_form.reason }}
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Description</label>
+                        {{ return_form.description }}
+                    </div>
+                    <button type="submit" class="btn btn-warning"><i class="fa fa-undo"></i> Submit Return Request</button>
+                </form>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="col-md-4">
+        <!-- Order Summary -->
+        <div class="card mb-4">
+            <div class="card-body">
+                <h5 class="card-title">Order Summary</h5>
+                <p><strong>Status:</strong>
+                    <span class="badge bg-{% if order.status == 'delivered' %}success{% elif order.status == 'cancelled' %}danger{% elif order.status == 'shipped' %}info{% else %}warning{% endif %}">
+                        {{ order.get_status_display }}
+                    </span>
+                </p>
+                <p><strong>Payment:</strong>
+                    <span class="badge bg-{% if order.payment_status == 'paid' %}success{% elif order.payment_status == 'failed' %}danger{% else %}warning{% endif %}">
+                        {{ order.get_payment_status_display }}
+                    </span>
+                </p>
+                <hr>
+                <p>Subtotal: ${{ order.subtotal }}</p>
+                <p>Tax: ${{ order.tax_amount }}</p>
+                <p>Shipping: ${{ order.shipping_cost }}</p>
+                {% if order.discount_amount %}
+                <p class="text-success">Discount: -${{ order.discount_amount }}
+                    {% if order.coupon_code %}<small>({{ order.coupon_code }})</small>{% endif %}
+                </p>
+                {% endif %}
+                <hr>
+                <h5>Total: ${{ order.total_amount }}</h5>
+            </div>
+        </div>
+
+        <!-- Shipping Address -->
+        <div class="card mb-4">
+            <div class="card-body">
+                <h5 class="card-title">Shipping Address</h5>
+                <p style="white-space:pre-line;">{{ order.shipping_address }}</p>
+            </div>
+        </div>
+
+        <!-- Order Date -->
+        <div class="card">
+            <div class="card-body">
+                <p><strong>Ordered:</strong> {{ order.created_at|date:"M d, Y H:i" }}</p>
+                {% if order.shipped_at %}<p><strong>Shipped:</strong> {{ order.shipped_at|date:"M d, Y H:i" }}</p>{% endif %}
+                {% if order.delivered_at %}<p><strong>Delivered:</strong> {{ order.delivered_at|date:"M d, Y H:i" }}</p>{% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Status History -->
+{% if status_history %}
+<div class="card mt-4">
+    <div class="card-body">
+        <h5 class="card-title">Status History</h5>
+        <table class="table table-sm">
+            <thead><tr><th>Status</th><th>Notes</th><th>Date</th></tr></thead>
+            <tbody>
+            {% for entry in status_history %}
+            <tr>
+                <td>{{ entry.get_status_display }}</td>
+                <td>{{ entry.notes }}</td>
+                <td>{{ entry.created_at|date:"M d, Y H:i" }}</td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

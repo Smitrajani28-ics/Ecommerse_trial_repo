@@ -1,0 +1,67 @@
+{% extends 'base.html' %}
+
+{% block title %}Order History{% endblock %}
+
+{% block content %}
+<h2><i class="fa fa-history"></i> Order History</h2>
+
+{% if orders %}
+<div class="table-responsive">
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Order #</th>
+                <th>Date</th>
+                <th>Status</th>
+                <th>Total</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for order in orders %}
+            <tr>
+                <td>{{ order.order_number }}</td>
+                <td>{{ order.created_at|date:"M d, Y" }}</td>
+                <td>
+                    <span class="badge bg-{% if order.status == 'delivered' %}success{% elif order.status == 'cancelled' %}danger{% elif order.status == 'shipped' %}info{% else %}warning{% endif %}">
+                        {{ order.get_status_display }}
+                    </span>
+                </td>
+                <td class="price">${{ order.total_amount }}</td>
+                <td>
+                    <a href="{% url 'orders:order_detail' order.id %}" class="btn btn-sm btn-outline-primary">
+                        View Details
+                    </a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{% if is_paginated %}
+<nav>
+    <ul class="pagination justify-content-center">
+        {% if page_obj.has_previous %}
+        <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}">Previous</a></li>
+        {% endif %}
+        {% for num in page_obj.paginator.page_range %}
+        <li class="page-item {% if page_obj.number == num %}active{% endif %}">
+            <a class="page-link" href="?page={{ num }}">{{ num }}</a>
+        </li>
+        {% endfor %}
+        {% if page_obj.has_next %}
+        <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}">Next</a></li>
+        {% endif %}
+    </ul>
+</nav>
+{% endif %}
+
+{% else %}
+<div class="text-center py-5">
+    <i class="fa fa-box-open fa-4x text-muted mb-3"></i>
+    <h4>No orders yet</h4>
+    <a href="{% url 'products:product_list' %}" class="btn btn-primary">Start Shopping</a>
+</div>
+{% endif %}
+{% endblock %}

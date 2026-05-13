@@ -3,24 +3,77 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}Ecommerce Site{% endblock %}</title>
+    <title>{% block title %}E-Commerce Store{% endblock %}</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Mountains+of+Christmas:wght@400;700&display=swap" rel="stylesheet">
     {% load static %}
     <link rel="stylesheet" href="{% static 'css/style.css' %}">
 </head>
 <body>
     {% include 'includes/navbar.html' %}
-    
+
+    <!-- Christmas Banner -->
+    <div class="christmas-banner">
+        <i class="fa fa-snowflake"></i>
+        <strong>Merry Christmas!</strong> Enjoy our special festive offers and free shipping on all orders!
+        <i class="fa fa-gift"></i>
+    </div>
+
     <main class="container mt-4">
         {% include 'includes/messages.html' %}
         {% block content %}
         {% endblock %}
     </main>
-    
+
     {% include 'includes/footer.html' %}
     
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="{% static 'js/main.js' %}"></script>
+    <!-- Snowfall effect -->
+    <canvas class="snow"></canvas>
+    <script>
+    // Simple snow effect
+    const canvas = document.querySelector('.snow');
+    if (canvas) {
+      const ctx = canvas.getContext('2d');
+      let W = window.innerWidth, H = window.innerHeight;
+      canvas.width = W; canvas.height = H;
+      let mf = 80, flakes = [];
+      for(let i=0; i<mf; i++) {
+        flakes.push({x:Math.random()*W, y:Math.random()*H, r:Math.random()*4+1, d:Math.random()*mf});
+      }
+      function drawFlakes() {
+        ctx.clearRect(0,0,W,H);
+        ctx.fillStyle = 'white';
+        ctx.beginPath();
+        for(let i=0; i<mf; i++) {
+          let f = flakes[i];
+          ctx.moveTo(f.x, f.y);
+          ctx.arc(f.x, f.y, f.r, 0, Math.PI*2, true);
+        }
+        ctx.fill();
+        moveFlakes();
+      }
+      let angle = 0;
+      function moveFlakes() {
+        angle += 0.01;
+        for(let i=0; i<mf; i++) {
+          let f = flakes[i];
+          f.y += Math.cos(angle+f.d) + 1 + f.r/2;
+          f.x += Math.sin(angle) * 2;
+          if(f.x > W+5 || f.x < -5 || f.y > H) {
+            flakes[i] = {x:Math.random()*W, y:-10, r:f.r, d:f.d};
+          }
+        }
+      }
+      setInterval(drawFlakes, 33);
+      window.addEventListener('resize', () => {
+        W = window.innerWidth; H = window.innerHeight;
+        canvas.width = W; canvas.height = H;
+      });
+    }
+    </script>
     {% block extra_js %}{% endblock %}
 </body>
 </html>
